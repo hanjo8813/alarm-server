@@ -32,28 +32,42 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: Docker build and push
-        run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }} .
-          docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
+      # 멀티플랫폼 빌드 셋업
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
+          platforms: linux/arm64
 
       - name: Deploy to Oracle Cloud
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.ORACLE_INSTANCE_HOST }}
-          port: ${{ secrets.ORACLE_INSTANCE_PORT }}
-          username: ${{ secrets.ORACLE_INSTANCE_USERNAME }}
-          key: ${{ secrets.ORACLE_INSTANCE_PRIVATE_KEY }}
+          host: ${{ secrets.OCI_INSTANCE_HOST }}
+          port: ${{ secrets.OCI_INSTANCE_PORT }}
+          username: ${{ secrets.OCI_INSTANCE_USERNAME }}
+          key: ${{ secrets.OCI_INSTANCE_PRIVATE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }} |
-            docker stop ${{ secrets.DOCKER_TAG }} |
-            docker rm ${{ secrets.DOCKER_TAG }} |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
+            docker stop ${{ secrets.DOCKER_TAG }}
+            docker rm ${{ secrets.DOCKER_TAG }}
             docker run -d \
             --name ${{ secrets.DOCKER_TAG }} \
             -p 8080:8080 \
             -e SLACK_WEBHOOK_URL_ALARM=${{ secrets.SLACK_WEBHOOK_URL_ALARM }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }} |
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
             docker image prune -f
 
       - name: Send result to slack
@@ -64,4 +78,4 @@ jobs:
           fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_URL_CICD }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_CICD }}
