@@ -2,7 +2,7 @@ name: cd
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ main ]
 
 jobs:
   cd:
@@ -50,8 +50,7 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
-          platforms: |
-            linux/arm64
+          platforms: linux/arm64
 
       - name: Deploy to Oracle Cloud
         uses: appleboy/ssh-action@master
