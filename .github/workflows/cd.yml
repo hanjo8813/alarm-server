@@ -53,7 +53,7 @@ jobs:
             --name ${{ secrets.DOCKER_TAG }} \
             -p 8080:8080 \
             -e SLACK_WEBHOOK_URL_ALARM=${{ secrets.SLACK_WEBHOOK_URL_ALARM }} \
-            ${{ secrets.DOCKER_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
             docker image prune -f
 
       - name: Send result to slack
