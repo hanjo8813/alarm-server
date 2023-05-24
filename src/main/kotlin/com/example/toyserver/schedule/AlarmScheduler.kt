@@ -20,31 +20,37 @@ class AlarmScheduler(
 
     @Scheduled(fixedDelay = 3 * 60 * 1000)
     fun leeumSchedule() {
+        leeumService("20230527")
+        leeumService("20230528")
+        leeumService("20230604")
+    }
+
+    fun leeumService(date: String) {
         val apiClient: WebClient = WebClient.builder()
             .baseUrl("https://ticket.leeum.org/leeum/personal/getTimeListJson.do")
             .build()
 
-        val multipartBodyBuilder = MultipartBodyBuilder()
-        multipartBodyBuilder.part("foundCd", "M30")
-        multipartBodyBuilder.part("locCd", "3")
-        multipartBodyBuilder.part("eventCd", "202202")
-        multipartBodyBuilder.part("placeGrp", "2")
-        multipartBodyBuilder.part("planExhibit", "")
-        multipartBodyBuilder.part("limitedMuzCd", "010000")
-        multipartBodyBuilder.part("limitedEventCd", "202202")
-        multipartBodyBuilder.part("selectGbn", "202202")
-        multipartBodyBuilder.part("date", "20230604")
+        val builder = MultipartBodyBuilder()
+        builder.part("foundCd", "M30")
+        builder.part("locCd", "3")
+        builder.part("eventCd", "202202")
+        builder.part("placeGrp", "2")
+        builder.part("planExhibit", "")
+        builder.part("limitedMuzCd", "010000")
+        builder.part("limitedEventCd", "202202")
+        builder.part("selectGbn", "202202")
+        builder.part("date", date)
 
         try {
             val response: String? = apiClient.post()
                 .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
+                .body(BodyInserters.fromMultipartData(builder.build()))
                 .retrieve()
                 .bodyToMono(String::class.java)
                 .block()
             val infoByTimes: JsonNode = mapper.readTree(response).path("timeList")
 
-            var isOpen: Boolean = false
+            var isOpen = false
             val sb = StringBuilder()
             for (info: JsonNode in infoByTimes) {
                 val time: String = info.path("SCHEDULE_TIME").asText()
@@ -56,16 +62,16 @@ class AlarmScheduler(
                 val remain = (rsvCnt + entCnt) - (crpRsvCnt + personCnt)
                 if (remain > 0) {
                     isOpen = true
-                    sb.append(time).append(" - ").append(remain).append("자리 open\n")
+                    sb.append(date).append("-").append(time).append(" : ").append(remain).append("자리 open\n")
                 }
             }
             sb.append("예약 : https://ticket.leeum.org/leeum/personal/exhibitList.do")
 
             if (isOpen)
                 sendSlack(sb.toString())
-
         } catch (e: Exception) {
-            sendSlack("오류 발생")
+            sendSlack("오류 발생 : $e")
+            e.printStackTrace()
         }
     }
 
@@ -76,6 +82,5 @@ class AlarmScheduler(
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-
     }
 }
