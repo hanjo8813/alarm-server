@@ -32,10 +32,10 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: Docker Setup QEMU
+      # 멀티플랫폼 빌드 셋업
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-
-      - name: Docker Setup Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Login to Docker hub
