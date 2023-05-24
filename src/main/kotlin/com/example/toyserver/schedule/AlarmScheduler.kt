@@ -35,39 +35,47 @@ class AlarmScheduler(
         multipartBodyBuilder.part("selectGbn", "202202")
         multipartBodyBuilder.part("date", "20230604")
 
-        val response: String? = apiClient.post()
-            .contentType(MediaType.MULTIPART_FORM_DATA)
-            .body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
-            .retrieve()
-            .bodyToMono(String::class.java)
-            .block()
-        val infoByTimes: JsonNode = mapper.readTree(response).path("timeList")
+        try {
+            val response: String? = apiClient.post()
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(multipartBodyBuilder.build()))
+                .retrieve()
+                .bodyToMono(String::class.java)
+                .block()
+            val infoByTimes: JsonNode = mapper.readTree(response).path("timeList")
 
-        var isOpen: Boolean = false
-        val sb = StringBuilder()
-        for (info: JsonNode in infoByTimes) {
-            val time: String = info.path("SCHEDULE_TIME").asText()
-            val rsvCnt: Int = info.path("RSV_CNT").asInt()
-            val entCnt: Int = info.path("ENT_CNT").asInt()
-            val crpRsvCnt: Int = info.path("GRP_RSV_CNT").asInt()
-            val personCnt: Int = info.path("PERSON_CNT").asInt()
+            var isOpen: Boolean = false
+            val sb = StringBuilder()
+            for (info: JsonNode in infoByTimes) {
+                val time: String = info.path("SCHEDULE_TIME").asText()
+                val rsvCnt: Int = info.path("RSV_CNT").asInt()
+                val entCnt: Int = info.path("ENT_CNT").asInt()
+                val crpRsvCnt: Int = info.path("GRP_RSV_CNT").asInt()
+                val personCnt: Int = info.path("PERSON_CNT").asInt()
 
-            val remain = (rsvCnt + entCnt) - (crpRsvCnt + personCnt)
-            if (remain > 0) {
-                isOpen = true
-                sb.append(time).append(" - ").append(remain).append("자리 open\n")
+                val remain = (rsvCnt + entCnt) - (crpRsvCnt + personCnt)
+                if (remain > 0) {
+                    isOpen = true
+                    sb.append(time).append(" - ").append(remain).append("자리 open\n")
+                }
             }
+            sb.append("예약 : https://ticket.leeum.org/leeum/personal/exhibitList.do")
+
+            if (isOpen)
+                sendSlack(sb.toString())
+
+        } catch (e: Exception) {
+            sendSlack("오류 발생")
         }
-        sb.append("예약 : https://ticket.leeum.org/leeum/personal/exhibitList.do")
+    }
 
-        if (!isOpen)
-            return
-
+    fun sendSlack(message: String) {
         WebClient.builder().baseUrl(slackWebhookUrl).build()
             .post()
-            .bodyValue(mapOf("text" to sb.toString()))
+            .bodyValue(mapOf("text" to message))
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
+
     }
 }
