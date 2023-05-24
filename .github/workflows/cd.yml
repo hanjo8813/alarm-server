@@ -46,14 +46,14 @@ jobs:
           username: ${{ secrets.ORACLE_INSTANCE_USERNAME }}
           key: ${{ secrets.ORACLE_INSTANCE_PRIVATE_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
-            docker stop ${{ secrets.DOCKER_TAG }}
-            docker rm ${{ secrets.DOCKER_TAG }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }} |
+            docker stop ${{ secrets.DOCKER_TAG }} |
+            docker rm ${{ secrets.DOCKER_TAG }} |
             docker run -d \
             --name ${{ secrets.DOCKER_TAG }} \
             -p 8080:8080 \
             -e SLACK_WEBHOOK_URL_ALARM=${{ secrets.SLACK_WEBHOOK_URL_ALARM }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ secrets.DOCKER_TAG }} |
             docker image prune -f
 
       - name: Send result to slack
