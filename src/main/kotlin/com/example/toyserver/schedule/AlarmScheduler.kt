@@ -56,11 +56,14 @@ class AlarmScheduler(
                 val time: String = info.path("SCHEDULE_TIME").asText()
                 val rsvCnt: Int = info.path("RSV_CNT").asInt()
                 val entCnt: Int = info.path("ENT_CNT").asInt()
-                val crpRsvCnt: Int = info.path("GRP_RSV_CNT").asInt()
-                val personCnt: Int = info.path("PERSON_CNT").asInt()
+                val grpRsvCnt: Int = info.path("GRP_RSV_CNT").asInt()
+                val personCnt : Int = info.path("PERSON_CNT").asInt()
 
-                val remain = (rsvCnt + entCnt) - (crpRsvCnt + personCnt)
+                val remain = personCnt - (rsvCnt + entCnt + grpRsvCnt)
                 if (remain > 0) {
+                    if(date == "20230527" && time == "1200"){
+                        continue
+                    }
                     isOpen = true
                     sb.append(date).append("-").append(time).append(" : ").append(remain).append("자리 open\n")
                 }
