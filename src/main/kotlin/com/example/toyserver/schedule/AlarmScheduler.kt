@@ -18,7 +18,7 @@ class AlarmScheduler(
 
     var mapper: ObjectMapper = ObjectMapper()
 
-    @Scheduled(fixedDelay = 3 * 60 * 1000)
+    @Scheduled(fixedDelay = 30 * 1000)
     fun leeumSchedule() {
         leeumService("20230527")
         leeumService("20230528")
@@ -54,16 +54,13 @@ class AlarmScheduler(
             val sb = StringBuilder()
             for (info: JsonNode in infoByTimes) {
                 val time: String = info.path("SCHEDULE_TIME").asText()
-                val rsvCnt: Int = info.path("RSV_CNT").asInt()
-                val entCnt: Int = info.path("ENT_CNT").asInt()
-                val grpRsvCnt: Int = info.path("GRP_RSV_CNT").asInt()
-                val personCnt : Int = info.path("PERSON_CNT").asInt()
+                val rsvCnt: Int = info.path("RSV_CNT").asInt()  // 예약 확정
+                val entCnt: Int = info.path("ENT_CNT").asInt()  // 예약창 진입한 사람 수
+                val grpRsvCnt: Int = info.path("GRP_RSV_CNT").asInt()   // 그룹 예약 확정
+                val personCnt : Int = info.path("PERSON_CNT").asInt()   // 총 자리 수
 
                 val remain = personCnt - (rsvCnt + entCnt + grpRsvCnt)
                 if (remain > 0) {
-                    if(date == "20230527" && time == "1200"){
-                        continue
-                    }
                     isOpen = true
                     sb.append(date).append("-").append(time).append(" : ").append(remain).append("자리 open\n")
                 }
