@@ -6,12 +6,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 
-
-@Component
+//@Component
 class AlarmScheduler(
     @Value("\${slack.webhook.url}") val slackWebhookUrl: String
 ) {
